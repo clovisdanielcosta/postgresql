@@ -18,6 +18,11 @@ CREATE TABLE IF NOT EXISTS banco (
 	PRIMARY KEY (numero)
 );
 
+INSERT INTO banco (numero, nome) VALUES ('237', 'Bradesco');
+INSERT INTO banco (numero, nome) VALUES ('104', 'Caixa Econômica Federal');
+INSERT INTO banco (numero, nome) VALUES ('341', 'Itaú');
+
+
 CREATE TABLE IF NOT EXISTS agencia(
 	banco_numero INTEGER NOT NULL,
 	numero INTEGER NOT NULL,
@@ -27,6 +32,20 @@ CREATE TABLE IF NOT EXISTS agencia(
 	PRIMARY KEY (banco_numero, numero),
 	FOREIGN KEY (banco_numero) REFERENCES banco (numero) 
 );
+
+INSERT INTO agencia (banco_numero, numero, nome) VALUES (001, 1244, 'Visc. Guarapuava');
+INSERT INTO agencia (banco_numero, numero, nome) VALUES (001, 1316, 'Mallet');
+INSERT INTO agencia (banco_numero, numero, nome) VALUES (001, 2145, 'Itararé');
+INSERT INTO agencia (banco_numero, numero, nome) VALUES (104, 1343, 'Itapeva');
+INSERT INTO agencia (banco_numero, numero, nome) VALUES (104, 1245, 'Curitiba');
+INSERT INTO agencia (banco_numero, numero, nome) VALUES (104, 3243, 'Fortaleza');
+INSERT INTO agencia (banco_numero, numero, nome) VALUES (237, 8245, 'Santos');
+INSERT INTO agencia (banco_numero, numero, nome) VALUES (237, 3212, 'Londrina');
+INSERT INTO agencia (banco_numero, numero, nome) VALUES (237, 4389, 'Maringá');
+INSERT INTO agencia (banco_numero, numero, nome) VALUES (341, 0368, 'Praça Osório');
+INSERT INTO agencia (banco_numero, numero, nome) VALUES (341, 8113, 'Batel');
+INSERT INTO agencia (banco_numero, numero, nome) VALUES (341, 2331, 'Bigorrilho');
+
 
 CREATE TABLE IF NOT EXISTS cliente (
 	numero BIGSERIAL PRIMARY KEY,
