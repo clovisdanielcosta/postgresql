@@ -66,7 +66,8 @@ CREATE TABLE IF NOT EXISTS conta_corrente (
 	ativo BOOLEAN NOT NULL DEFAULT TRUE,
 	data_criacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY (banco_numero, agencia_numero, numero, digito, cliente_numero),
-	FOREIGN KEY (banco_numero, agencia_numero) REFERENCES agencia (banco_numero, numero),
+	FOREIGN KEY (banco_numero, agencia_numero) 
+		REFERENCES agencia (banco_numero, numero),
 	FOREIGN KEY (cliente_numero) REFERENCES cliente (numero)
 );
 
@@ -87,5 +88,92 @@ CREATE TABLE cliente_transacoes (
 	tipo_transacao_id SMALLINT NOT NULL,
 	valor NUMERIC(15,2) NOT NULL,
 	data_criacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	FOREIGN KEY (banco_numero, agencia_numero, conta_corrente_numero, conta_corrente_digito, cliente_numero) REFERENCES conta_corrente (banco_numero, agencia_numero, numero, digito, cliente_numero)
+	FOREIGN KEY (banco_numero, agencia_numero, conta_corrente_numero, 
+				conta_corrente_digito, cliente_numero) 
+				REFERENCES conta_corrente (banco_numero, agencia_numero, 
+				numero, digito, cliente_numero)
+	);
+
+CREATE TABLE IF NOT EXISTS teste (
+	cpf VARCHAR(11) NOT NULL,
+	nome VARCHAR(50) NOT NULL,
+	create_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (cpf)
 );
+
+INSERT INTO teste (cpf, nome, create_at) 
+VALUES ('12345678900', 'José Colméia', '20-06-2020 01:23:29');
+
+INSERT INTO teste (cpf, nome, create_at) 
+VALUES ('12345678900', 'José Colméia', '20-06-2020 01:23:29') 
+		ON CONFLICT (cpf) DO NOTHING;
+
+UPDATE teste SET nome = 'Pedro Alvares' WHERE cpf = '12345678900';
+
+SELECT * FROM teste;
+
+
+SELECT numero, nome FROM banco;
+SELECT banco_numero, numero, nome FROM agencia;
+SELECT numero, nome, email FROM cliente;
+
+SELECT * FROM conta_corrente;
+
+--PARA OBTER INFORMAÇÕES DA TABELA
+SELECT * FROM information_schema.columns 
+	WHERE table_name = 'banco'; 
+--COLUNAS ESPECIFÍFICAS
+SELECT column_name, data_type FROM information_schema.columns 
+	WHERE table_name = 'banco';
+
+-----------------------
+--FUNÇÕES AGREGADAS
+-----------------------
+-- AVG
+SELECT AVG (valor) FROM cliente_transacoes;
+-- COUNT
+SELECT COUNT(numero) FROM cliente;
+
+SELECT COUNT (numero), email FROM cliente 
+	WHERE email ILIKE '%gmail.com'
+	GROUP BY email;
+
+-- COUNT COM HAVING
+SELECT COUNT (id), tipo_transacao_id 
+	FROM cliente_transacoes
+	GROUP BY tipo_transacao_id
+	HAVING COUNT(id) > 150;
+
+-- SUM
+SELECT SUM(valor) FROM cliente_transacoes;
+
+SELECT SUM(valor), tipo_transacao_id 
+	FROM cliente_transacoes
+	GROUP BY tipo_transacao_id;
+
+-- SUM COM ORDENAÇÃO
+SELECT SUM(valor), tipo_transacao_id 
+	FROM cliente_transacoes
+	GROUP BY tipo_transacao_id
+	ORDER BY tipo_transacao_id DESC; -- OU ASC
+
+-- MAX
+SELECT MAX(valor) FROM cliente_transacoes;
+	--Máximo por transação
+SELECT MAX(valor), tipo_transacao_id 
+	FROM cliente_transacoes 
+	GROUP BY tipo_transacao_id;
+
+-- MIN
+SELECT MIN(valor) FROM cliente_transacoes;
+	--Mínimo por transação
+SELECT MIN(valor), tipo_transacao_id 
+	FROM cliente_transacoes 
+	GROUP BY tipo_transacao_id;
+
+
+
+
+
+
+
