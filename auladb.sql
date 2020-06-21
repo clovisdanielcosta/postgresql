@@ -174,9 +174,11 @@ SELECT MIN(valor), tipo_transacao_id
 SELECT numero, nome FROM banco;
 SELECT banco_numero, numero, nome FROM agencia;
 SELECT numero, nome FROM cliente;
-SELECT banco_numero, agencia_numero, numero, digito, cliente_numero FROM conta_corrente;
+SELECT banco_numero, agencia_numero, numero, digito, cliente_numero 
+	FROM conta_corrente;
 SELECT id, nome FROM tipo_transacao;
-SELECT banco_numero, agencia_numero, conta_corrente_numero, conta_corrente_digito, cliente_numero, valor 
+SELECT banco_numero, agencia_numero, conta_corrente_numero, 
+	   conta_corrente_digito, cliente_numero, valor 
 	FROM cliente_transacoes;
 
 SELECT COUNT(1) FROM banco; -- 151
@@ -229,6 +231,61 @@ JOIN	conta_corrente
 JOIN	cliente
 	ON	cliente.numero = conta_corrente. cliente_numero;
 
+------------------------------------
+-- Common Table Expressions - CTE --
+------------------------------------
+WITH tbl_tmp_banco AS (
+	SELECT numero, nome 
+	FROM banco
+)
+SELECT numero, nome
+FROM tbl_tmp_banco;
+
+WITH params AS (
+	SELECT 213 AS banco_numero
+), tbl_tmp_banco AS (
+	SELECT numero, nome
+	FROM banco
+	JOIN params ON params.banco_numero = banco.numero
+)
+SELECT numero, nome
+FROM tbl_tmp_banco;
+
+-- SUB SELECT
+SELECT banco.numero, banco.nome
+FROM banco
+JOIN (
+	SELECT 213 AS banco_numero
+) params ON params.banco_numero = banco.numero;
+
+-- CTE 
+WITH cliente_e_transacoes AS (
+	SELECT 	cliente.nome AS cliente_nome,
+			tipo_transacao.nome AS tipo_transacao_nome,
+			cliente_transacoes.valor AS cliente_transacoes_valor
+	FROM cliente_transacoes
+	JOIN cliente ON cliente.numero = cliente_transacoes.cliente_numero
+	JOIN tipo_transacao 
+				ON tipo_transacao.id = cliente_transacoes.tipo_transacao_id
+)
+SELECT cliente_nome, tipo_transacao_nome, cliente_transacoes_valor
+FROM cliente_e_transacoes;
+
+-- CTE 
+WITH cliente_e_transacoes AS (
+	SELECT 	cliente.nome AS cliente_nome,
+			banco.nome AS banco_nome,
+			tipo_transacao.nome AS tipo_transacao_nome,
+			cliente_transacoes.valor AS cliente_transacoes_valor
+	FROM cliente_transacoes
+	JOIN cliente ON cliente.numero = cliente_transacoes.cliente_numero
+	JOIN tipo_transacao 
+				ON tipo_transacao.id = cliente_transacoes.tipo_transacao_id
+	JOIN banco 	ON banco.numero = cliente_transacoes.banco_numero 
+				AND banco.nome ILIKE '%Itaú%'
+)
+SELECT cliente_nome, banco_nome, tipo_transacao_nome, cliente_transacoes_valor
+FROM cliente_e_transacoes;
 
 
 
