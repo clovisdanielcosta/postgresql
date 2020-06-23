@@ -258,6 +258,7 @@ JOIN (
 	SELECT 213 AS banco_numero
 ) params ON params.banco_numero = banco.numero;
 
+
 -- CTE 
 WITH cliente_e_transacoes AS (
 	SELECT 	cliente.nome AS cliente_nome,
@@ -288,6 +289,164 @@ SELECT cliente_nome, banco_nome, tipo_transacao_nome, cliente_transacoes_valor
 FROM cliente_e_transacoes;
 
 
+------------------------------------
+---- VIEWS
+------------------------------------
 
 
+CREATE OR REPLACE VIEW vw_bancos AS (
+	SELECT numero, nome, ativo
+	FROM banco
+);
+
+SELECT numero, nome, ativo
+FROM vw_bancos;
+
+CREATE OR REPLACE VIEW vw_bancos_2 (banco_numero, banco_nome, banco_ativo) AS (
+	SELECT numero, nome, ativo
+	FROM banco
+);
+
+SELECT banco_numero, banco_nome, banco_ativo
+FROM vw_bancos_2;
+
+INSERT INTO vw_bancos_2 (banco_numero, banco_nome, banco_ativo)
+VALUES (51, 'Banco Boa Ideia', True);
+
+SELECT banco_numero, banco_nome, banco_ativo FROM vw_bancos_2 WHERE banco_numero = 51;
+SELECT numero, nome, ativo FROM banco WHERE numero = 51;
+
+UPDATE vw_bancos_2 SET banco_ativo = False WHERE banco_numero = 51;
+
+DELETE FROM vw_bancos_2 WHERE banco_numero = 51;
+
+
+---------------------
+-- Views Temporárias
+---------------------
+CREATE OR REPLACE TEMPORARY VIEW vw_agencia AS (
+	SELECT nome FROM agencia
+);
+
+SELECT nome FROM vw_agencia;
+
+
+
+-- Com With Options
+CREATE OR REPLACE VIEW vw_bancos_ativos AS (
+	SELECT numero, nome, ativo
+	FROM banco
+	WHERE ativo IS TRUE
+) WITH LOCAL CHECK OPTION;
+
+INSERT INTO vw_bancos_ativos (numero, nome, ativo)
+VALUES (51, 'Banco Boa Ideia', False);
+--- ERROR:  new row violates check option for view "vw_bancos_ativos"
+
+INSERT INTO vw_bancos_ativos (numero, nome, ativo)
+VALUES (51, 'Banco Boa Ideia', True);
+--- OK
+
+CREATE OR REPLACE VIEW vw_bancos_com_a AS (
+	SELECT numero, nome, ativo
+	FROM vw_bancos_ativos
+	WHERE nome ILIKE 'a%'
+) WITH LOCAL CHECK OPTION;
+
+INSERT INTO vw_bancos_com_a (numero, nome, ativo) VALUES (333, 'Beta Banco', True);
+--ERROR:  new row violates check option for view "vw_bancos_com_a"
+INSERT INTO vw_bancos_com_a (numero, nome, ativo) VALUES (333, 'Alfa Banco', True);
+--OK
+
+------------
+--- CASCADED
+------------
+CREATE OR REPLACE VIEW vw_bancos_ativos AS (
+	SELECT numero, nome, ativo
+	FROM banco
+	WHERE ativo IS TRUE
+);
+
+CREATE OR REPLACE VIEW vw_bancos_com_a AS (
+	SELECT numero, nome, ativo
+	FROM vw_bancos_ativos
+	WHERE nome ILIKE 'a%'
+) WITH CASCADED CHECK OPTION;
+
+INSERT INTO vw_bancos_com_a (numero, nome, ativo) VALUES (331, 'Alfa Beta Banco', False);
+-- ERROR:  new row violates check option for view "vw_bancos_ativos"
+
+INSERT INTO vw_bancos_com_a (numero, nome, ativo) VALUES (331, 'Alfa Beta Banco', True);
+-- OK
+INSERT INTO vw_bancos_com_a (numero, nome, ativo) VALUES (332, 'Alfa Beta Banco', True);
+
+
+
+--------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS funcionarios (
+	id SERIAL,
+	nome VARCHAR(30) NOT NULL,
+	gerente INTEGER,
+	PRIMARY KEY (id),
+	FOREIGN KEY (gerente) REFERENCES funcionarios(id)
+);
+
+INSERT INTO funcionarios (nome, gerente) VALUES ('Anselmo',Null);
+INSERT INTO funcionarios (nome, gerente) VALUES ('Beatriz',1);
+INSERT INTO funcionarios (nome, gerente) VALUES ('Magno',1);
+INSERT INTO funcionarios (nome, gerente) VALUES ('Cremilda',2);
+INSERT INTO funcionarios (nome, gerente) VALUES ('Wagner',4);
+
+SELECT id, nome, gerente FROM funcionarios;
+
+SELECT id, nome, gerente FROM funcionarios WHERE gerente IS NULL
+UNION ALL
+SELECT id, nome, gerente FROM funcionarios WHERE gerente = 999; -- Apenas
+-- para exemplificar o primeiro Loop da view recursiva abaixo.
+
+------------------
+--- VIEW RECURSIVA
+------------------
+CREATE OR REPLACE RECURSIVE VIEW vw_func (id, gerente, funcionario) AS (
+	SELECT id, gerente, nome
+	FROM funcionarios
+	WHERE gerente IS Null
+	
+	UNION ALL
+	
+	SELECT funcionarios.id, funcionarios.gerente, funcionarios.nome
+	FROM funcionarios
+	JOIN vw_func ON vw_func.id = funcionarios.gerente
+); 
+	
+SELECT id, gerente, funcionario
+FROM vw_func;
+-----------------------------------------------------------------------------
+
+-----------------------------------------------------
+-- TRANSAÇÕES
+-----------------------------------------------------
+SELECT numero, nome, ativo FROM banco ORDER BY numero;
+
+UPDATE banco SET ativo = False WHERE numero = 0;
+
+BEGIN;
+UPDATE banco SET ativo = True WHERE numero = 0;
+ROLLBACK;
+
+BEGIN;
+UPDATE banco SET ativo = True WHERE numero = 0;
+COMMIT;
+
+SELECT id, gerente, nome FROM funcionarios;
+
+BEGIN;
+UPDATE funcionarios SET gerente = 2 WHERE id = 3;
+SAVEPOINT sv_func;
+UPDATE funcionarios SET gerente = null;
+ROLLBACK TO sv_func;
+UPDATE funcionarios SET gerente = 3 WHERE id = 2;
+COMMIT;
+
+SELECT id, gerente, nome FROM funcionarios;
 
