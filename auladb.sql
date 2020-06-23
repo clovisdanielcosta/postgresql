@@ -450,3 +450,62 @@ COMMIT;
 
 SELECT id, gerente, nome FROM funcionarios;
 
+
+------------------------------------------------------------
+--- FUNCTIONS
+------------------------------------------------------------
+CREATE OR REPLACE FUNCTION func_somar(INTEGER, INTEGER)
+RETURNS INTEGER
+SECURITY DEFINER
+--RETURNS NULL OR NULL INPUT -- Caso queira que retorne Null qdo houver
+CALLED ON NULL INPUT
+LANGUAGE SQL
+AS $$
+	SELECT COALESCE($1, 100) + COALESCE($2, 100); 
+	-- Coalesce é para evitar que retorne Null.
+	-- Retorna o primeiro valor encontrado
+$$;
+
+SELECT func_somar(2,3); -- Resultado: 5
+SELECT func_somar(2,null); -- Resultado: 102
+
+
+
+------------------------------------------------------
+-- COM PLPGSQL
+------------------------------------------------------
+CREATE OR REPLACE FUNCTION bancos_add(p_numero INTEGER, p_nome VARCHAR, p_ativo BOOLEAN)
+RETURNS INTEGER
+SECURITY INVOKER -- Só o criador da função pode chamar a função
+LANGUAGE PLPGSQL
+CALLED ON NULL INPUT
+AS $$
+DECLARE variavel_id INTEGER;
+BEGIN
+	IF p_numero IS NULL OR p_nome IS NULL OR p_ativo IS NULL THEN
+		RETURN 0;
+	END IF;
+	
+	SELECT INTO variavel_id numero
+	FROM banco
+	WHERE numero = p_numero;
+	
+	IF variavel_id IS NULL THEN
+		INSERT INTO banco(numero, nome, ativo)
+		VALUES (p_numero, p_nome, p_ativo);
+	ELSE
+		RETURN variavel_id;
+	END IF;
+
+	SELECT INTO variavel_id numero
+	FROM banco
+	WHERE numero = p_numero;
+
+	RETURN variavel_id;
+
+END;
+$$;
+
+SELECT bancos_add (5433, 'Banco Novo de Novo', true);
+	
+SELECT numero, nome, ativo FROM banco WHERE numero = 5433;
